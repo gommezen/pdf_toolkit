@@ -1,0 +1,25 @@
+# PDF Toolkit Dependencies
+# Install with: pip install -r requirements.txt
+
+# GUI Framework
+PyQt6>=6.6.0
+PyQt6-svg>=6.6.0         # SVG icon support for Art Deco icons
+
+# PDF Processing
+PyMuPDF>=1.23.0          # Fast PDF manipulation (imported as 'fitz')
+pypdf>=3.17.0            # Additional PDF operations
+
+# OCR
+pytesseract>=0.3.10      # Tesseract wrapper
+pdf2image>=1.16.0        # PDF to image conversion for OCR
+
+# Image Processing
+Pillow>=10.0.0           # Image manipulation
+
+# Development
+pytest>=7.4.0            # Testing
+black>=23.0.0            # Code formatting
+mypy>=1.5.0              # Type checking
+
+# Build
+pyinstaller>=6.0.0       # Create standalone executable
