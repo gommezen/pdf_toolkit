@@ -6,17 +6,22 @@ All icons use the Metropolis color scheme:
 
 Usage:
     from src.ui.icons import TOOL_ICONS, get_icon_widget
-    
+
     svg_string = TOOL_ICONS['ocr']
     widget = get_icon_widget('ocr', size=40)
+
+Note: Uses pre-rendered QPixmap cache to avoid QPainter conflicts
+that occur when multiple QSvgWidget instances render simultaneously.
 """
 
 from PyQt6.QtWidgets import QLabel
-from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtCore import QByteArray, Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtGui import QPainter
+
+# Cache for pre-rendered pixmaps to avoid repeated SVG rendering
+_pixmap_cache: dict[tuple[str, int], QPixmap] = {}
 
 
 # =============================================================================
@@ -96,7 +101,7 @@ TOOL_ICONS = {
         <rect x="15" y="15" width="10" height="12" rx="1" stroke="{GOLD}" stroke-width="1" fill="none"/>
     </svg>''',
     
-    "protect": f'''<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    "encrypt": f'''<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="12" y="18" width="16" height="14" rx="2" stroke="{GOLD}" stroke-width="1.5" fill="none"/>
         <path d="M15 18 L15 12 A5 5 0 0 1 25 12 L25 18" stroke="{GOLD}" stroke-width="1.5" fill="none"/>
         <circle cx="20" cy="24" r="2" fill="{MINT}"/>
@@ -107,10 +112,20 @@ TOOL_ICONS = {
     </svg>''',
     
     "settings": f'''<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 6 L22 10 L26 8 L26 13 L31 12 L28 17 L33 19 L28 23 L31 28 L26 27 L26 32 L22 30 L20 34 L18 30 L14 32 L14 27 L9 28 L12 23 L7 19 L12 17 L9 12 L14 13 L14 8 L18 10 Z" 
+        <path d="M20 6 L22 10 L26 8 L26 13 L31 12 L28 17 L33 19 L28 23 L31 28 L26 27 L26 32 L22 30 L20 34 L18 30 L14 32 L14 27 L9 28 L12 23 L7 19 L12 17 L9 12 L14 13 L14 8 L18 10 Z"
               stroke="{GOLD}" stroke-width="1.5" fill="none"/>
         <circle cx="20" cy="20" r="5" stroke="{MINT}" stroke-width="1.5" fill="none"/>
         <circle cx="20" cy="20" r="2" fill="{MINT}"/>
+    </svg>''',
+
+    "citation": f'''<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="4" width="24" height="32" rx="2" stroke="{GOLD}" stroke-width="1.5" fill="none"/>
+        <path d="M8 10 L32 10" stroke="{GOLD}" stroke-width="1" opacity="0.5"/>
+        <text x="14" y="20" fill="{MINT}" font-size="14" font-family="Georgia, serif">"</text>
+        <text x="26" y="30" fill="{MINT}" font-size="14" font-family="Georgia, serif">"</text>
+        <line x1="16" y1="24" x2="28" y2="24" stroke="{GOLD}" stroke-width="1"/>
+        <line x1="12" y1="28" x2="24" y2="28" stroke="{GOLD}" stroke-width="1" opacity="0.6"/>
+        <circle cx="32" cy="4" r="3" fill="{GOLD}" opacity="0.4"/>
     </svg>''',
 }
 
@@ -146,69 +161,113 @@ FILE_ICON = f'''<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/20
 # HELPER FUNCTIONS
 # =============================================================================
 
-def get_svg_widget(svg_string: str, size: int = 40) -> QSvgWidget:
-    """
-    Create a QSvgWidget from an SVG string.
-    
-    Args:
-        svg_string: The SVG markup as a string
-        size: Widget size in pixels (square)
-        
-    Returns:
-        QSvgWidget configured with the SVG
-    """
-    widget = QSvgWidget()
-    widget.load(QByteArray(svg_string.encode('utf-8')))
-    widget.setFixedSize(size, size)
-    return widget
-
-
-def get_icon_widget(icon_id: str, size: int = 40) -> QSvgWidget:
-    """
-    Get a tool icon widget by ID.
-    
-    Args:
-        icon_id: The tool ID (e.g., 'ocr', 'merge', 'split')
-        size: Widget size in pixels
-        
-    Returns:
-        QSvgWidget with the icon, or empty widget if not found
-    """
-    svg_string = TOOL_ICONS.get(icon_id, '')
-    if not svg_string:
-        # Return empty widget
-        widget = QSvgWidget()
-        widget.setFixedSize(size, size)
-        return widget
-    return get_svg_widget(svg_string, size)
-
-
-def get_drop_zone_icon(size: int = 50) -> QSvgWidget:
-    """Get the drop zone icon widget."""
-    return get_svg_widget(DROP_ZONE_ICON, size)
-
-
-def get_file_icon(size: int = 28) -> QSvgWidget:
-    """Get the file icon widget."""
-    return get_svg_widget(FILE_ICON, size)
-
-
 def svg_to_pixmap(svg_string: str, size: int) -> QPixmap:
     """
-    Convert SVG string to QPixmap.
-    Useful for QLabel or other widgets that need pixmaps.
-    
+    Convert SVG string to QPixmap with caching.
+    Uses a cache to avoid repeated rendering and QPainter conflicts.
+
     Args:
         svg_string: The SVG markup
         size: Size in pixels (square)
-        
+
     Returns:
-        QPixmap rendered from the SVG
+        QPixmap rendered from the SVG (cached)
     """
+    # Use hash of svg_string for cache key
+    cache_key = (hash(svg_string), size)
+
+    if cache_key in _pixmap_cache:
+        return _pixmap_cache[cache_key]
+
+    # Render SVG to pixmap
     renderer = QSvgRenderer(QByteArray(svg_string.encode('utf-8')))
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
     renderer.render(painter)
     painter.end()
+
+    # Cache the result
+    _pixmap_cache[cache_key] = pixmap
     return pixmap
+
+
+def get_icon_pixmap(icon_id: str, size: int = 40) -> QPixmap:
+    """
+    Get a tool icon as QPixmap by ID (cached).
+
+    Args:
+        icon_id: The tool ID (e.g., 'ocr', 'merge', 'split')
+        size: Pixmap size in pixels
+
+    Returns:
+        QPixmap with the icon, or empty pixmap if not found
+    """
+    svg_string = TOOL_ICONS.get(icon_id, '')
+    if not svg_string:
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        return pixmap
+    return svg_to_pixmap(svg_string, size)
+
+
+def get_icon_widget(icon_id: str, size: int = 40) -> QLabel:
+    """
+    Get a tool icon widget by ID.
+    Uses QLabel with pre-rendered pixmap to avoid QPainter conflicts.
+
+    Args:
+        icon_id: The tool ID (e.g., 'ocr', 'merge', 'split')
+        size: Widget size in pixels
+
+    Returns:
+        QLabel with the icon pixmap
+    """
+    label = QLabel()
+    label.setFixedSize(size, size)
+    label.setStyleSheet("background: transparent;")
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    pixmap = get_icon_pixmap(icon_id, size)
+    label.setPixmap(pixmap)
+    return label
+
+
+def get_drop_zone_icon(size: int = 50) -> QLabel:
+    """Get the drop zone icon widget as QLabel with pixmap."""
+    label = QLabel()
+    label.setFixedSize(size, size)
+    label.setStyleSheet("background: transparent;")
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    label.setPixmap(svg_to_pixmap(DROP_ZONE_ICON, size))
+    return label
+
+
+def get_file_icon(size: int = 28) -> QLabel:
+    """Get the file icon widget as QLabel with pixmap."""
+    label = QLabel()
+    label.setFixedSize(size, size)
+    label.setStyleSheet("background: transparent;")
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    label.setPixmap(svg_to_pixmap(FILE_ICON, size))
+    return label
+
+
+def get_svg_widget(svg_string: str, size: int = 40) -> QLabel:
+    """
+    Create a QLabel with pre-rendered SVG pixmap.
+    Legacy function name kept for compatibility.
+
+    Args:
+        svg_string: The SVG markup as a string
+        size: Widget size in pixels (square)
+
+    Returns:
+        QLabel with the rendered SVG
+    """
+    label = QLabel()
+    label.setFixedSize(size, size)
+    label.setStyleSheet("background: transparent;")
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    label.setPixmap(svg_to_pixmap(svg_string, size))
+    return label

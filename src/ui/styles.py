@@ -218,17 +218,19 @@ QComboBox:focus {
 }
 
 QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
     border: none;
-    width: 24px;
+    width: 30px;
     background: transparent;
 }
 
 QComboBox::down-arrow {
-    image: none;
+    width: 0;
+    height: 0;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 6px solid #7FBFB5;
-    margin-right: 10px;
+    border-top: 5px solid #7FBFB5;
 }
 
 QComboBox QAbstractItemView {
@@ -449,6 +451,68 @@ QToolTip {
     padding: 6px 10px;
     border-radius: 4px;
     font-size: 11px;
+}
+
+/* Tab Widget */
+QTabWidget::pane {
+    background: #122424;
+    border: 1px solid #2D5A5A;
+    border-radius: 6px;
+    border-top-left-radius: 0px;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background: #0D1A1A;
+    color: #7FBFB5;
+    border: 1px solid #2D5A5A;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    padding: 10px 20px;
+    margin-right: 2px;
+    font-size: 12px;
+}
+
+QTabBar::tab:selected {
+    background: #122424;
+    color: #D4A84B;
+    border-color: #2D5A5A;
+    border-bottom: 1px solid #122424;
+}
+
+QTabBar::tab:hover:!selected {
+    background: #1A3333;
+    color: #E8E4D9;
+}
+
+/* Checkboxes */
+QCheckBox {
+    spacing: 10px;
+    color: #E8E4D9;
+    font-size: 12px;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #2D5A5A;
+    border-radius: 3px;
+    background: #0D1A1A;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #4A8080;
+}
+
+QCheckBox::indicator:checked {
+    border-color: #D4A84B;
+    background: #D4A84B;
+}
+
+QCheckBox::indicator:checked:hover {
+    background: #E8C547;
+    border-color: #E8C547;
 }
 
 /* ============================================

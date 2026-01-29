@@ -9,20 +9,10 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
     QPushButton, QSizePolicy, QScrollArea
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QByteArray
-from PyQt6.QtSvgWidgets import QSvgWidget
+from PyQt6.QtCore import Qt, pyqtSignal
 
 from src.core.utils import format_file_size, get_pdf_page_count
-
-
-# File icon SVG matching HTML
-FILE_ICON_SVG = '''<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="4" y="2" width="16" height="22" rx="1" stroke="#D4A84B" stroke-width="1.5" fill="none"/>
-  <path d="M14 2 L20 8 L14 8 Z" fill="#7FBFB5"/>
-  <line x1="7" y1="12" x2="17" y2="12" stroke="#7FBFB5" stroke-width="1"/>
-  <line x1="7" y1="16" x2="17" y2="16" stroke="#7FBFB5" stroke-width="1"/>
-  <line x1="7" y1="20" x2="13" y2="20" stroke="#7FBFB5" stroke-width="1"/>
-</svg>'''
+from src.ui.icons import get_file_icon
 
 
 class FileItemWidget(QWidget):
@@ -46,11 +36,8 @@ class FileItemWidget(QWidget):
         # HTML: margin-right: 14px on icon
         layout.setSpacing(14)
 
-        # File icon - SVG 28x28
-        icon_widget = QSvgWidget()
-        icon_widget.load(QByteArray(FILE_ICON_SVG.encode()))
-        icon_widget.setFixedSize(28, 28)
-        icon_widget.setStyleSheet("background: transparent;")
+        # File icon - pre-rendered 28x28 pixmap (avoids QPainter conflicts)
+        icon_widget = get_file_icon(28)
         layout.addWidget(icon_widget)
 
         # File info

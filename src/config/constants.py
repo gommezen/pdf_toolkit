@@ -15,15 +15,26 @@ DOCX_EXTENSIONS = ('.docx', '.doc')
 # Tool definitions for the main window - matching HTML prototype order
 TOOLS = [
     # Row 1
-    {"id": "ocr", "name": "OCR", "desc": "Genkend tekst", "icon": "📝", "enabled": True},
-    {"id": "merge", "name": "Merge", "desc": "Kombiner filer", "icon": "📎", "enabled": True},
-    {"id": "split", "name": "Split", "desc": "Opdel sider", "icon": "✂️", "enabled": True},
-    {"id": "compress", "name": "Compress", "desc": "Komprimér", "icon": "📦", "enabled": True},
+    {"id": "ocr", "name": "OCR", "desc": "Genkend tekst", "icon": "📝", "enabled": True,
+     "tooltip": "Genkend og udtræk tekst fra scannede PDF-filer og billeder. Understøtter dansk og engelsk."},
+    {"id": "merge", "name": "Merge", "desc": "Kombiner filer", "icon": "📎", "enabled": True,
+     "tooltip": "Kombiner flere PDF-filer til ét dokument. Træk for at ændre rækkefølge."},
+    {"id": "split", "name": "Split", "desc": "Opdel sider", "icon": "✂️", "enabled": True,
+     "tooltip": "Opdel en PDF i separate filer. Vælg sideområder eller del i lige store dele."},
+    {"id": "compress", "name": "Compress", "desc": "Komprimér", "icon": "📦", "enabled": True,
+     "tooltip": "Reducer filstørrelsen ved at komprimere billeder. Vælg mellem kvalitetsniveauer."},
     # Row 2
-    {"id": "remove", "name": "Fjern", "desc": "Fjern sider", "icon": "🗑️", "enabled": False},
-    {"id": "rotate", "name": "Rotér", "desc": "Rotér sider", "icon": "🔄", "enabled": False},
-    {"id": "protect", "name": "Kryptér", "desc": "Password", "icon": "🔒", "enabled": False},
-    {"id": "settings", "name": "Indstil.", "desc": "Opsætning", "icon": "⚙️", "enabled": True},
+    {"id": "remove", "name": "Fjern", "desc": "Fjern sider", "icon": "🗑️", "enabled": True,
+     "tooltip": "Fjern uønskede sider fra en PDF. Vælg sider visuelt med preview."},
+    {"id": "rotate", "name": "Rotér", "desc": "Rotér sider", "icon": "🔄", "enabled": True,
+     "tooltip": "Rotér sider 90°, 180° eller 270°. Vælg specifikke sider eller alle."},
+    {"id": "encrypt", "name": "Kryptér", "desc": "Password", "icon": "🔒", "enabled": True,
+     "tooltip": "Beskyt PDF med password-kryptering. Understøtter AES-128 og AES-256."},
+    {"id": "citation", "name": "Citater", "desc": "Udtræk ref.", "icon": "📚", "enabled": True,
+     "tooltip": "Udtræk bibliografiske metadata fra akademiske PDFs. Eksportér til BibTeX eller JSON."},
+    # Row 3
+    {"id": "settings", "name": "Indstil.", "desc": "Opsætning", "icon": "⚙️", "enabled": True,
+     "tooltip": "Konfigurer applikationens indstillinger og standardværdier."},
 ]
 
 # Color theme - METROPOLIS ART DECO

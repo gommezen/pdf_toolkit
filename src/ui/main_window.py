@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy, QScrollArea
 )
 from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QShortcut, QKeySequence, QPixmap, QResizeEvent, QColor, QPainter, QLinearGradient, QPen
+from PyQt6.QtGui import QShortcut, QKeySequence, QPixmap, QResizeEvent, QColor
 from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 
 from src.ui.widgets.drop_zone import DropZone
@@ -23,6 +23,11 @@ from src.ui.dialogs.split_dialog import SplitDialog
 from src.ui.dialogs.convert_dialog import ConvertDialog
 from src.ui.dialogs.settings_dialog import SettingsDialog
 from src.ui.dialogs.ocr_dialog import OCRDialog
+from src.ui.dialogs.compress_dialog import CompressDialog
+from src.ui.dialogs.rotate_dialog import RotateDialog
+from src.ui.dialogs.remove_dialog import RemoveDialog
+from src.ui.dialogs.encrypt_dialog import EncryptDialog
+from src.ui.dialogs.citation_dialog import CitationDialog
 from src.config.constants import TOOLS, SUPPORTED_EXTENSIONS
 
 
@@ -30,6 +35,7 @@ class ArtDecoLines(QWidget):
     """
     Decorative vertical lines overlay matching HTML .art-deco-lines.
     4 vertical gradient lines at 5%, 12%, 88%, 95% positions.
+    Uses QFrame widgets instead of custom painting to avoid QPainter conflicts.
     """
 
     def __init__(self, parent=None):
@@ -37,37 +43,33 @@ class ArtDecoLines(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-    def paintEvent(self, event):
-        painter = QPainter()
-        if not painter.begin(self):
-            return
-
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        h = self.height()
-        w = self.width()
-
-        # Vertical line positions (percentage from left)
+        # Create 4 vertical line frames
+        self._lines = []
         positions = [0.05, 0.12, 0.88, 0.95]
 
         for pos in positions:
+            line = QFrame(self)
+            line.setFixedWidth(1)
+            line.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+            line.setStyleSheet("""
+                background: qlineargradient(y1:0, y2:1,
+                    stop:0 transparent,
+                    stop:0.3 rgba(45, 90, 90, 51),
+                    stop:0.5 rgba(127, 191, 181, 51),
+                    stop:0.7 rgba(45, 90, 90, 51),
+                    stop:1 transparent);
+            """)
+            self._lines.append((line, pos))
+
+    def resizeEvent(self, event):
+        """Position lines on resize."""
+        super().resizeEvent(event)
+        h = self.height()
+        w = self.width()
+
+        for line, pos in self._lines:
             x = int(w * pos)
-
-            # Create vertical gradient: transparent -> teal -> mint -> teal -> transparent
-            gradient = QLinearGradient(x, 0, x, h)
-            gradient.setColorAt(0.0, QColor(45, 90, 90, 0))      # transparent
-            gradient.setColorAt(0.3, QColor(45, 90, 90, 51))     # teal with 0.2 opacity
-            gradient.setColorAt(0.5, QColor(127, 191, 181, 51))  # mint with 0.2 opacity
-            gradient.setColorAt(0.7, QColor(45, 90, 90, 51))     # teal with 0.2 opacity
-            gradient.setColorAt(1.0, QColor(45, 90, 90, 0))      # transparent
-
-            pen = QPen()
-            pen.setWidth(1)
-            pen.setBrush(gradient)
-            painter.setPen(pen)
-            painter.drawLine(x, 0, x, h)
-
-        painter.end()
+            line.setGeometry(x, 0, 1, h)
 
 
 def get_resource_path(relative_path: str) -> str:
@@ -231,7 +233,7 @@ class MainWindow(QMainWindow):
         header_layout.addWidget(self.title_label)
 
         # Subtitle
-        self.subtitle_label = QLabel("DOKUMENTBEHANDLING · ANNO 2025")
+        self.subtitle_label = QLabel("DOKUMENTBEHANDLING · ANNO 2026")
         self.subtitle_label.setObjectName("subtitle")
         self.subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(self.subtitle_label)
@@ -443,7 +445,15 @@ class MainWindow(QMainWindow):
         elif tool_id == "ocr":
             self._show_ocr_dialog(files)
         elif tool_id == "compress":
-            self._show_compress_placeholder(files)
+            self._show_compress_dialog(files)
+        elif tool_id == "remove":
+            self._show_remove_dialog(files)
+        elif tool_id == "rotate":
+            self._show_rotate_dialog(files)
+        elif tool_id == "encrypt":
+            self._show_encrypt_dialog(files)
+        elif tool_id == "citation":
+            self._show_citation_dialog(files)
         else:
             QMessageBox.information(
                 self,
@@ -491,15 +501,50 @@ class MainWindow(QMainWindow):
         dialog = OCRDialog(ocr_files, self)
         dialog.exec()
 
-    def _show_compress_placeholder(self, files: list[str]):
-        QMessageBox.information(
-            self, "Compress - Komprimér",
-            "Komprimering er under udvikling.\n\n"
-            "Denne funktion vil:\n"
-            "• Reducere PDF filstørrelse\n"
-            "• Tilbyde forskellige komprimerings niveauer\n"
-            "• Bevare læsbar kvalitet"
-        )
+    def _show_compress_dialog(self, files: list[str]):
+        """Show compression dialog."""
+        pdf_files = [f for f in files if f.lower().endswith('.pdf')]
+        if not pdf_files:
+            QMessageBox.information(self, "Ingen PDF filer", "Tilføj en PDF fil for at komprimere.")
+            return
+        dialog = CompressDialog(pdf_files, self)
+        dialog.exec()
+
+    def _show_rotate_dialog(self, files: list[str]):
+        """Show rotate pages dialog."""
+        pdf_files = [f for f in files if f.lower().endswith('.pdf')]
+        if not pdf_files:
+            QMessageBox.information(self, "Ingen PDF filer", "Tilføj en PDF fil for at rotere sider.")
+            return
+        dialog = RotateDialog(pdf_files, self)
+        dialog.exec()
+
+    def _show_remove_dialog(self, files: list[str]):
+        """Show remove pages dialog."""
+        pdf_files = [f for f in files if f.lower().endswith('.pdf')]
+        if not pdf_files:
+            QMessageBox.information(self, "Ingen PDF filer", "Tilføj en PDF fil for at fjerne sider.")
+            return
+        dialog = RemoveDialog(pdf_files, self)
+        dialog.exec()
+
+    def _show_encrypt_dialog(self, files: list[str]):
+        """Show encryption dialog."""
+        pdf_files = [f for f in files if f.lower().endswith('.pdf')]
+        if not pdf_files:
+            QMessageBox.information(self, "Ingen PDF filer", "Tilføj en PDF fil for at kryptere.")
+            return
+        dialog = EncryptDialog(pdf_files, self)
+        dialog.exec()
+
+    def _show_citation_dialog(self, files: list[str]):
+        """Show citation extraction dialog."""
+        pdf_files = [f for f in files if f.lower().endswith('.pdf')]
+        if not pdf_files:
+            QMessageBox.information(self, "Ingen PDF filer", "Tilføj en PDF fil for at udtrække citationer.")
+            return
+        dialog = CitationDialog(pdf_files, self)
+        dialog.exec()
 
     def _show_settings(self):
         dialog = SettingsDialog(self)

@@ -5,10 +5,9 @@ Matches pdf-toolkit-unified.html reference design exactly.
 
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy, QFrame, QHBoxLayout, QGraphicsDropShadowEffect
 from PyQt6.QtCore import pyqtSignal, Qt
-from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtGui import QColor
 
-from src.ui.icons import TOOL_ICONS, get_icon_widget
+from src.ui.icons import get_icon_widget
 
 
 class ToolTile(QFrame):
@@ -52,12 +51,8 @@ class ToolTile(QFrame):
         self._icon_widget.setFixedSize(40, 40)
         self._icon_widget.setStyleSheet("background: transparent;")
 
-        # Icon glow effect (hidden by default)
-        self._icon_glow = QGraphicsDropShadowEffect()
-        self._icon_glow.setBlurRadius(0)
-        self._icon_glow.setOffset(0, 0)
-        self._icon_glow.setColor(QColor(212, 168, 75, 0))
-        self._icon_widget.setGraphicsEffect(self._icon_glow)
+        # Icon glow effect - created on demand to avoid QPainter conflicts at startup
+        self._icon_glow = None
 
         # Center the icon
         icon_container = QWidget()
@@ -87,12 +82,11 @@ class ToolTile(QFrame):
         self.setFixedHeight(130)
         self.setCursor(Qt.CursorShape.PointingHandCursor if self._enabled else Qt.CursorShape.ForbiddenCursor)
 
-        # Shadow effect for tile
-        self._shadow = QGraphicsDropShadowEffect()
-        self._shadow.setBlurRadius(0)
-        self._shadow.setOffset(0, 0)
-        self._shadow.setColor(QColor(0, 0, 0, 0))
-        self.setGraphicsEffect(self._shadow)
+        # Set tooltip from config
+        self.setToolTip(self.tool_config.get('tooltip', ''))
+
+        # Shadow effect for tile - created on demand to avoid QPainter conflicts at startup
+        self._shadow = None
 
         # Decorative lines (overlays, hidden by default)
         self._top_line = QFrame(self)
@@ -154,15 +148,13 @@ class ToolTile(QFrame):
                 background: transparent;
             """)
 
-        # Reset shadow
-        self._shadow.setBlurRadius(0)
-        self._shadow.setOffset(0, 0)
-        self._shadow.setColor(QColor(0, 0, 0, 0))
-
-        # Reset icon glow
+        # Remove shadow effects when not hovered (avoids QPainter conflicts)
+        if self._shadow:
+            self.setGraphicsEffect(None)
+            self._shadow = None
         if self._icon_glow:
-            self._icon_glow.setBlurRadius(0)
-            self._icon_glow.setColor(QColor(212, 168, 75, 0))
+            self._icon_widget.setGraphicsEffect(None)
+            self._icon_glow = None
 
     def _apply_hover_style(self):
         """Apply hover style with gold border, shadow, and icon glow."""
@@ -185,15 +177,20 @@ class ToolTile(QFrame):
             background: transparent;
         """)
 
-        # Add shadow - HTML: 0 15px 40px rgba(0,0,0,0.5)
+        # Create shadow effect on hover - HTML: 0 15px 40px rgba(0,0,0,0.5)
+        if not self._shadow:
+            self._shadow = QGraphicsDropShadowEffect()
+            self.setGraphicsEffect(self._shadow)
         self._shadow.setBlurRadius(40)
         self._shadow.setOffset(0, 12)
         self._shadow.setColor(QColor(0, 0, 0, 130))
 
-        # Add icon glow - HTML: filter: drop-shadow(0 0 8px var(--gold))
-        if self._icon_glow:
-            self._icon_glow.setBlurRadius(16)
-            self._icon_glow.setColor(QColor(212, 168, 75, 200))
+        # Create icon glow on hover - HTML: filter: drop-shadow(0 0 8px var(--gold))
+        if not self._icon_glow:
+            self._icon_glow = QGraphicsDropShadowEffect()
+            self._icon_widget.setGraphicsEffect(self._icon_glow)
+        self._icon_glow.setBlurRadius(16)
+        self._icon_glow.setColor(QColor(212, 168, 75, 200))
 
     def resizeEvent(self, event):
         """Update decorative lines position on resize."""
@@ -234,14 +231,15 @@ class ToolTile(QFrame):
         if self._enabled and event.button() == Qt.MouseButton.LeftButton:
             self._pressed = True
             # Slightly reduce shadow on press (HTML: translateY(-2px) vs -4px on hover)
-            self._shadow.setOffset(0, 6)
-            self._shadow.setBlurRadius(25)
+            if self._shadow:
+                self._shadow.setOffset(0, 6)
+                self._shadow.setBlurRadius(25)
 
     def mouseReleaseEvent(self, event):
         """Handle mouse release."""
         if self._enabled and event.button() == Qt.MouseButton.LeftButton:
             self._pressed = False
-            if self._hovered:
+            if self._hovered and self._shadow:
                 # Restore hover shadow
                 self._shadow.setOffset(0, 12)
                 self._shadow.setBlurRadius(40)

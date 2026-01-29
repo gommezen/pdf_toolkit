@@ -48,12 +48,8 @@ class DropZone(QFrame):
         self._icon_widget.setFixedSize(50, 50)
         self._icon_widget.setStyleSheet("background: transparent;")
 
-        # Glow effect for icon (hidden by default)
-        self._icon_glow = QGraphicsDropShadowEffect()
-        self._icon_glow.setBlurRadius(0)
-        self._icon_glow.setOffset(0, 0)
-        self._icon_glow.setColor(QColor(212, 168, 75, 0))
-        self._icon_widget.setGraphicsEffect(self._icon_glow)
+        # Glow effect for icon - created on demand to avoid QPainter conflicts
+        self._icon_glow = None
 
         icon_container = QWidget()
         icon_container.setStyleSheet("background: transparent;")
@@ -110,10 +106,10 @@ class DropZone(QFrame):
                 border-radius: 8px;
             }
         """)
-        # Remove icon glow
+        # Remove icon glow effect to avoid QPainter conflicts
         if self._icon_glow:
-            self._icon_glow.setBlurRadius(0)
-            self._icon_glow.setColor(QColor(212, 168, 75, 0))
+            self._icon_widget.setGraphicsEffect(None)
+            self._icon_glow = None
         # Update inner border
         self._update_inner_border()
 
@@ -128,10 +124,12 @@ class DropZone(QFrame):
                 border-radius: 8px;
             }
         """)
-        # Add icon glow - HTML: filter: drop-shadow(0 0 15px var(--gold))
-        if self._icon_glow:
-            self._icon_glow.setBlurRadius(30)
-            self._icon_glow.setColor(QColor(212, 168, 75, 180))
+        # Create icon glow on hover - HTML: filter: drop-shadow(0 0 15px var(--gold))
+        if not self._icon_glow:
+            self._icon_glow = QGraphicsDropShadowEffect()
+            self._icon_widget.setGraphicsEffect(self._icon_glow)
+        self._icon_glow.setBlurRadius(30)
+        self._icon_glow.setColor(QColor(212, 168, 75, 180))
         # Update inner border
         self._update_inner_border()
 
