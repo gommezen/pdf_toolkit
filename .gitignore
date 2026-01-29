@@ -54,6 +54,7 @@ dmypy.json
 Thumbs.db
 
 # Project specific
+pdf-toolkit-unified.html
 *.pdf
 *.png
 *.jpg
