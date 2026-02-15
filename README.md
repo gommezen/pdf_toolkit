@@ -1,22 +1,30 @@
 # PDF Toolkit
 
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![PyQt6](https://img.shields.io/badge/PyQt6-6.6+-41CD52?logo=qt&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+![PyMuPDF](https://img.shields.io/badge/PyMuPDF-PDF%20Engine-red)
+![Tesseract](https://img.shields.io/badge/Tesseract-OCR-blue)
+![Status](https://img.shields.io/badge/Status-Feature%20Complete-brightgreen)
+
 En simpel og hurtig desktop-applikation til PDF-manipulation med dansk sprogunderstøttelse.
 
 **Metropolis Art Deco Theme** - Moderne UI inspireret af 1920'ernes Art Deco æstetik.
 
+![PDF Toolkit Screenshot](screenshot.png)
+
 ## Features
 
-### Implementeret
 - **OCR Tekstgenkendelse** - Gør scannede dokumenter søgbare (dansk + engelsk)
 - **Kombiner PDFs** - Saml flere PDF-filer til én
-- **Opdel PDF** - Split en PDF i flere filer
-- **Konverter Word til PDF** - Konverter .docx filer
-
-### Under udvikling
-- Komprimér PDF
-- Rotér sider
-- Fjern sider
-- Password beskyttelse
+- **Opdel PDF** - Split i enkelte sider, sideintervaller eller lige dele
+- **Komprimér PDF** - 3 niveauer (høj kvalitet, balanceret, maksimal)
+- **Rotér sider** - 90°, 180°, 270° for alle eller specifikke sider
+- **Fjern sider** - Visuel thumbnail-baseret sidevalg
+- **Password beskyttelse** - AES-256 kryptering med bruger- og ejerkodeord
+- **Citater** - Udtræk metadata fra akademiske PDFs (BibTeX/CSL-JSON)
+- **Konverter Word til PDF** - DOCX til PDF konvertering
 
 ## Installation
 
@@ -96,22 +104,27 @@ tesseract --list-langs
 
 ```
 pdf-toolkit/
-├── run_app.py          # Launcher script
-├── requirements.txt    # Python dependencies
+├── run_app.py              # Launcher script
+├── requirements.txt        # Python dependencies
 ├── src/
-│   ├── main.py         # Application entry point
-│   ├── ui/             # UI components
-│   │   ├── main_window.py
-│   │   ├── styles.py   # Art Deco theme
-│   │   ├── widgets/    # Custom widgets
-│   │   └── dialogs/    # Tool dialogs
-│   ├── core/           # Core functionality
-│   │   ├── ocr_engine.py
-│   │   ├── merger.py
-│   │   ├── splitter.py
-│   │   └── converter.py
-│   └── config/         # Settings
-└── tests/              # Unit tests
+│   ├── main.py             # Application entry point
+│   ├── ui/
+│   │   ├── main_window.py  # Hovedvindue med responsivt grid
+│   │   ├── styles.py       # Art Deco QSS tema
+│   │   ├── icons.py        # SVG ikoner med pixmap-cache
+│   │   ├── widgets/        # ToolTile, DropZone, FileList, Progress
+│   │   └── dialogs/        # 10 dialog-vinduer (OCR, Merge, Split, etc.)
+│   ├── core/               # PDF processing
+│   │   ├── ocr_engine.py   # Tesseract OCR
+│   │   ├── merger.py       # Kombiner PDFs
+│   │   ├── splitter.py     # Opdel PDF (4 modes)
+│   │   ├── compressor.py   # Komprimering (3 niveauer)
+│   │   ├── page_ops.py     # Rotér/fjern sider
+│   │   ├── encryption.py   # AES-256 kryptering
+│   │   ├── citation_extractor.py  # Akademisk metadata
+│   │   └── converter.py    # DOCX → PDF
+│   └── config/             # Settings og konstanter
+└── tests/                  # Unit tests
 ```
 
 ## Fejlfinding
