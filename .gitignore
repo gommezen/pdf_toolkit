@@ -63,11 +63,13 @@ pdf-toolkit-unified.html
 *.tif
 *.bmp
 !src/resources/icons/*
+!screenshot.png
 temp/
 output/
 
-# Claude Code local settings
-.claude/settings.local.json
+# Claude Code
+.claude/
+CLAUDE.md
 
 # Local test files
 test_pdf/
