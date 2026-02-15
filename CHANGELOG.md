@@ -30,6 +30,25 @@ All notable changes to PDF Toolkit will be documented in this file.
 #### New Icon
 - Added "citation" icon (book with quotation marks) to `icons.py`
 
+#### Hover Animation Improvements (`src/ui/widgets/tool_tile.py`)
+- **Tile lift animation** - Entire tile box now lifts on hover (not just content)
+  - translateY(-4px) on hover, translateY(-2px) on press
+  - Smooth 300ms ease animation matching CSS `transition: all 0.3s ease`
+  - Implemented via `QPropertyAnimation` on tile frame geometry
+- **Mint line animation** - Bottom mint line grows from center point outward
+  - Animates from 0% to 60% width on hover
+  - Synced with lift animation (300ms duration)
+  - Uses custom `AnimatedFrame` class with `pyqtProperty`
+- **Centered icon glow** - Drop shadow effect centered behind icon
+  - BlurRadius: 30px for soft falloff
+  - Offset: (0, 0) for centered glow
+  - Gold color with 220/255 opacity
+- **Drop zone icon glow** - Also centered with `setOffset(0, 0)`
+- **Architecture change** - ToolTile refactored from QFrame to QWidget container
+  - Inner `_tile_frame` (QFrame) holds visual styling and animates
+  - Outer container stays fixed in grid layout
+  - Prevents layout disruption during lift animation
+
 ---
 
 ## [1.1.0] - Phase 4 Complete

@@ -129,6 +129,7 @@ class DropZone(QFrame):
             self._icon_glow = QGraphicsDropShadowEffect()
             self._icon_widget.setGraphicsEffect(self._icon_glow)
         self._icon_glow.setBlurRadius(30)
+        self._icon_glow.setOffset(0, 0)  # Centered glow
         self._icon_glow.setColor(QColor(212, 168, 75, 180))
         # Update inner border
         self._update_inner_border()
